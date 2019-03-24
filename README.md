@@ -30,6 +30,12 @@ Make setup
 
 Open `.env` and edit as necessary.
 
+### Set up your database
+
+```sh
+python manage.py migrate
+python manage.py createsuperuser
+```
 
 # Repo structure
 
