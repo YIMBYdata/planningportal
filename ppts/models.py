@@ -5,11 +5,11 @@ class Location(models.Model):
         help_text="Polygon defining the parcel.") # TODO: GIS support
     shape_length = models.DecimalField(
         max_digits=15,
-        decimal_places=2,
+        decimal_places=8,
         help_text="Perimeter of polygon")
     shape_area = models.DecimalField(
         max_digits=15,
-        decimal_places=2,
+        decimal_places=15,
         help_text="Area of polygon")
     address = models.CharField(
         max_length=250,
@@ -19,7 +19,7 @@ class Location(models.Model):
 
 
 class Planner(models.Model):
-    str_id = models.CharField(
+    planner_id = models.CharField(
         max_length=100,
         help_text=("ID of planner as provided in original data. "
                    "Looks like a user login id"))
@@ -29,16 +29,18 @@ class Planner(models.Model):
 
 
 class RecordType(models.Model):
+    category = models.CharField(max_length=100,help_text =
+        "3-letter acronym for the record type (e.g. PRJ, PRL, ENV).  There are 63 types."),
+        primary_key=True)
     name = models.CharField(
         max_length=100,
         help_text=("Expansion of the 3-letter acronym (e.g. PRJ, PRL, ENV). "
-                   "There are 63 types."),
-        primary_key=True)
+                   "There are 63 types."))
     subtype = models.CharField(
         max_length=100,
         help_text=("One of 17 subcategories of records (e.g. Environmental, "
                    "Referrals, Legislation)"))
-    type = models.CharField(
+    record_type = models.CharField(
         max_length=100,
         help_text=("One of 5 categories of records (e.g. Applications, "
                    "Projects)"))
@@ -114,6 +116,11 @@ class ProjectDescription(models.Model):
         (TOBACCO, 'Tobacco Paraphernalia Est'),
     )
 
+    desc_type = models.CharField(
+        max_length=50,
+        choices=CHOICES)
+
+class MCDReferral(models.Model):
     MCD_BAR = "MCD_BAR"
     MCD_GEN_SPEC_GROCERY = "MCD_GEN_SPEC_GROCERY"
     MCD_LIMITED_RESTAURANT = "MCD_LIMITED_RESTAURANT"
@@ -132,6 +139,12 @@ class ProjectDescription(models.Model):
         (MCD_TOBACCO, 'Tobacco Paraphernalia'),
     )
 
+    mcd_type = models.CharField(
+        max_length=50,
+        choices=MCD_CHOICES,
+        null=True)
+
+class EnvironmentalReview(models.Model):
     ENV_CEQA = "ENV_CEQA"
     ENV_COMMUNITY_PLAN_DET = "ENV_COMMUNITY_PLAN_DET"
     ENV_COMMUNITY_PLAN_EXEMPT = "ENV_COMMUNITY_PLAN_EXEMPT"
@@ -182,13 +195,6 @@ class ProjectDescription(models.Model):
         (ENV_TRANSPO_REVIEW, 'Transportation Review-Abbreviated'),
     )
 
-    type = models.CharField(
-        max_length=50,
-        choices=CHOICES)
-    mcd_type = models.CharField(
-        max_length=50,
-        choices=MCD_CHOICES,
-        null=True)
     env_type = models.CharField(
         max_length=50,
         choices=ENV_CHOICES,
@@ -216,7 +222,7 @@ class LandUse(models.Model):
         (PARKING_SPACES, 'Parking Spaces (sq ft)'),
     )
 
-    type = models.CharField(max_length=20, choices=CHOICES)
+    land_use_type = models.CharField(max_length=20, choices=CHOICES)
     exist = models.DecimalField(
         max_digits=15,
         decimal_places=2,
@@ -266,7 +272,7 @@ class ProjectFeature(models.Model):
         (LIVING, 'Better Roof - Living Roof Area'),
         (OTHER, 'Other Project Feature'),
     )
-    type = models.CharField(
+    feature_type = models.CharField(
         max_length=50,
         choices=CHOICES)
     other_name = models.CharField(
@@ -315,7 +321,7 @@ class DwellingType(models.Model):
         (SRO, 'SRO, Units'),
         (STUDIO, 'Studios, Units'),
     )
-    type = models.CharField(
+    dwelling_type = models.CharField(
         max_length=50,
         choices=CHOICES)
     exist = models.DecimalField(
@@ -335,12 +341,32 @@ class DwellingType(models.Model):
         decimal_places=2,
         help_text="Area (optional)", blank=True)
 
+class hearing_date(models.Model):
+    BOS_1ST_READ = "BOS_1ST_READ"
+    BOS_2ND_READ = "BOS_2ND_READ"
+    COM_HEARING = "COM_HEARING"
+    MAYORAL_SIGN = "MAYORAL_SIGN"
+    TRANSMIT_DATE_BOS = "TRANSMIT_DATE_BOS"
+    COM_HEARING_DATE_BOS = "COM_HEARING_DATE_BOS"
+
+    CHOICES = (
+        (BOS_1ST_READ, 'Full Board Hearing Date 1'),
+        (BOS_2ND_READ, 'Full Board Hearing Date 2'),
+        (COM_HEARING, 'Committee Hearing Date'),
+        (MAYORAL_SIGN, 'Mayoral Action - Ordinance Signed Date'),
+        (TRANSMIT_DATE_BOS, 'Materials Hearing to BOS Clerk Date'),
+        (COM_HEARING_DATE_BOS, 'Committee Hearing Date - BOS Review'),
+
+    hearing_type_type = models.CharField(
+        max_length=50,
+        choices=CHOICES)
+    date = models.DateField("Date of hearing.")
 
 class Record(models.Model):
     planner = models.ForeignKey(Planner, on_delete=models.SET_NULL, null=True)
     location = models.ForeignKey(
         Location, on_delete=models.SET_NULL, null=True)
-    record_type = models.ForeignKey(
+    category = models.ForeignKey(
         RecordType, on_delete=models.SET_NULL, null=True)
     record_id = models.CharField(
         max_length=100,
@@ -367,7 +393,7 @@ class Record(models.Model):
         help_text="Current status (e.g. open, closed, accepted, rejected)")
     construct_cost = models.FloatField(
         help_text="Estimated construction cost in dollars of the project")
-    related_building_permit = models.CharField(
+    related_building_permit = models.CharField(max_length=100,
         help_text="Related Building Permit Number (significance unknown)")
     acalink = models.TextField(
         help_text="Link to this record in Accela Citizen Access")
@@ -385,16 +411,16 @@ class Record(models.Model):
     dwelling_type = models.ManyToManyField(
         DwellingType,
         help_text="Dwelling type of project")
+    #I think some other relations are missing still
 
-    related_building_permit = models.CharField(
+    '''related_building_permit = models.CharField(
         max_length=100, help_text="Related Building Permit Number")
     bos_1st_read = models.DateField(help_text="Full Board Hearing Date, First")
     bos_2nd_read = models.DateField(help_text="Full Board Hearing Date, Second")
     com_hearing = models.DateField(help_text="Committee Hearing Date")
     mayoral_sign = models.DateField(
-        help_text="Mayoral Action - Ordinance Signed Date")	
+        help_text="Mayoral Action - Ordinance Signed Date")
     transmit_date_bos = models.DateField(
         help_text="Materials Hearing to BOS Clerk Date")
     com_hearing_date_bos = models.DateField(
-        help_text="Committee Hearing Date - BOS Review")
-
+        help_text="Committee Hearing Date - BOS Review")'''
