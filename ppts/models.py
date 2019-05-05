@@ -1,8 +1,9 @@
 from django.db import models
 
+
 class Location(models.Model):
     the_geom = models.TextField(
-        help_text="Polygon defining the parcel.") # TODO: GIS support
+        help_text="Polygon defining the parcel.")  # TODO: GIS support
     shape_length = models.DecimalField(
         max_digits=15,
         decimal_places=8,
@@ -29,8 +30,10 @@ class Planner(models.Model):
 
 
 class RecordType(models.Model):
-    category = models.CharField(max_length=100,help_text =
-        "3-letter acronym for the record type (e.g. PRJ, PRL, ENV).  There are 63 types."),
+    category = models.CharField(
+        max_length=100,
+        help_text=("3-letter acronym for the record type (e.g. PRJ, PRL, "
+                   "ENV).  There are 63 types."),
         primary_key=True)
     name = models.CharField(
         max_length=100,
@@ -40,7 +43,7 @@ class RecordType(models.Model):
         max_length=100,
         help_text=("One of 17 subcategories of records (e.g. Environmental, "
                    "Referrals, Legislation)"))
-    record_type = models.CharField(
+    type = models.CharField(
         max_length=100,
         help_text=("One of 5 categories of records (e.g. Applications, "
                    "Projects)"))
@@ -116,11 +119,15 @@ class ProjectDescription(models.Model):
         (TOBACCO, 'Tobacco Paraphernalia Est'),
     )
 
-    desc_type = models.CharField(
+    type = models.CharField(
         max_length=50,
-        choices=CHOICES)
+        choices=CHOICES,
+        primary_key=True)
+
 
 class MCDReferral(models.Model):
+    _COL_NAME = "MCD_REFERRAL"
+
     MCD_BAR = "MCD_BAR"
     MCD_GEN_SPEC_GROCERY = "MCD_GEN_SPEC_GROCERY"
     MCD_LIMITED_RESTAURANT = "MCD_LIMITED_RESTAURANT"
@@ -139,12 +146,15 @@ class MCDReferral(models.Model):
         (MCD_TOBACCO, 'Tobacco Paraphernalia'),
     )
 
-    mcd_type = models.CharField(
+    type = models.CharField(
         max_length=50,
         choices=MCD_CHOICES,
-        null=True)
+        primary_key=True)
+
 
 class EnvironmentalReview(models.Model):
+    _COL_NAME = "ENVIRONMENTAL_REVIEW_TYPE"
+
     ENV_CEQA = "ENV_CEQA"
     ENV_COMMUNITY_PLAN_DET = "ENV_COMMUNITY_PLAN_DET"
     ENV_COMMUNITY_PLAN_EXEMPT = "ENV_COMMUNITY_PLAN_EXEMPT"
@@ -186,7 +196,7 @@ class EnvironmentalReview(models.Model):
         (ENV_GEN_RULE_EXCLUSION, 'General Rule Exclusion'),
         (ENV_INIT_STUDY_EIR, 'Initial Study-Environmental Impact Report'),
         (ENV_INIT_STUDY, 'Initial Study'),
-        (ENV_INIT_STUDY_NEGATIVE_DEC,'Initial Study-Negative Declaration'),
+        (ENV_INIT_STUDY_NEGATIVE_DEC, 'Initial Study-Negative Declaration'),
         (ENV_NEG_DEC_ADDENDUM, 'Negative Declaration Addendum'),
         (ENV_NOTE, 'Note to File'),
         (ENV_PUBLIC_PROJECT_EXEMPT, 'Public Project Exemption'),
@@ -195,10 +205,81 @@ class EnvironmentalReview(models.Model):
         (ENV_TRANSPO_REVIEW, 'Transportation Review-Abbreviated'),
     )
 
-    env_type = models.CharField(
+    type = models.CharField(
         max_length=50,
         choices=ENV_CHOICES,
+        primary_key=True)
+
+
+class Record(models.Model):
+    planner = models.ForeignKey(Planner, on_delete=models.SET_NULL, null=True)
+    location = models.ForeignKey(
+        Location, on_delete=models.SET_NULL, null=True)
+    record_type = models.ForeignKey(
+        RecordType, on_delete=models.SET_NULL, null=True)
+    record_id = models.CharField(
+        max_length=100,
+        help_text="Planning Department unique identifier for the record")
+
+    parent = models.OneToOneField(
+        "self",
+        related_name="child",
+        help_text="The parent/child relationship for related records.",
+        null=True,
+        on_delete=models.SET_NULL)
+
+    object_id = models.IntegerField(help_text="Esri ArcGIS system ID")
+    template_id = models.CharField(
+        max_length=100, help_text="Unique system identifier for the record")
+    name = models.CharField(
+        max_length=100,
+        help_text="Title of record as provided haphazardly by applicant")
+    description = models.TextField(
+        help_text=("Long description of record as provided haphazardly by "
+                   "applicant"))
+    status = models.CharField(
+        max_length=100,
+        help_text="Current status (e.g. open, closed, accepted, rejected)")
+    construct_cost = models.FloatField(
+        help_text="Estimated construction cost in dollars of the project")
+    related_building_permit = models.CharField(
+        max_length=100,
+        help_text="Related Building Permit Number (significance unknown)")
+    acalink = models.TextField(
+        help_text="Link to this record in Accela Citizen Access")
+    aalink = models.TextField(
+        help_text="Link to this record in Accela Automation")
+    date_opened = models.DateField("Date record was opened")
+    date_closed = models.DateField("Date record was closed")
+
+    project_description = models.ManyToManyField(
+        ProjectDescription,
+        help_text="Type of project")
+    mcd_referral = models.ForeignKey(
+        MCDReferral,
+        help_text="Medical Cannabis Dispensary referral",
+        on_delete=models.SET_NULL,
         null=True)
+    environment_review = models.ForeignKey(
+        EnvironmentalReview,
+        help_text="Environmental Review type",
+        on_delete=models.SET_NULL,
+        null=True)
+    # I think some other relations are missing still
+
+    related_building_permit = models.CharField(
+        max_length=100, help_text="Related Building Permit Number")
+    bos_1st_read = models.DateField(
+        help_text="Full Board Hearing Date, First")
+    bos_2nd_read = models.DateField(
+        help_text="Full Board Hearing Date, Second")
+    com_hearing = models.DateField(help_text="Committee Hearing Date")
+    mayoral_sign = models.DateField(
+        help_text="Mayoral Action - Ordinance Signed Date")
+    transmit_date_bos = models.DateField(
+        help_text="Materials Hearing to BOS Clerk Date")
+    com_hearing_date_bos = models.DateField(
+        help_text="Committee Hearing Date - BOS Review")
 
 
 class LandUse(models.Model):
@@ -221,8 +302,8 @@ class LandUse(models.Model):
         (VISITOR, 'Visitor (sq ft)'),
         (PARKING_SPACES, 'Parking Spaces (sq ft)'),
     )
-
-    land_use_type = models.CharField(max_length=20, choices=CHOICES)
+    record = models.ForeignKey(Record, on_delete=models.SET_NULL, null=True)
+    type = models.CharField(max_length=20, choices=CHOICES)
     exist = models.DecimalField(
         max_digits=15,
         decimal_places=2,
@@ -272,7 +353,8 @@ class ProjectFeature(models.Model):
         (LIVING, 'Better Roof - Living Roof Area'),
         (OTHER, 'Other Project Feature'),
     )
-    feature_type = models.CharField(
+    record = models.ForeignKey(Record, on_delete=models.SET_NULL, null=True)
+    type = models.CharField(
         max_length=50,
         choices=CHOICES)
     other_name = models.CharField(
@@ -321,7 +403,8 @@ class DwellingType(models.Model):
         (SRO, 'SRO, Units'),
         (STUDIO, 'Studios, Units'),
     )
-    dwelling_type = models.CharField(
+    record = models.ForeignKey(Record, on_delete=models.SET_NULL, null=True)
+    type = models.CharField(
         max_length=50,
         choices=CHOICES)
     exist = models.DecimalField(
@@ -341,7 +424,8 @@ class DwellingType(models.Model):
         decimal_places=2,
         help_text="Area (optional)", blank=True)
 
-class hearing_date(models.Model):
+
+class HearingDate(models.Model):
     BOS_1ST_READ = "BOS_1ST_READ"
     BOS_2ND_READ = "BOS_2ND_READ"
     COM_HEARING = "COM_HEARING"
@@ -356,71 +440,10 @@ class hearing_date(models.Model):
         (MAYORAL_SIGN, 'Mayoral Action - Ordinance Signed Date'),
         (TRANSMIT_DATE_BOS, 'Materials Hearing to BOS Clerk Date'),
         (COM_HEARING_DATE_BOS, 'Committee Hearing Date - BOS Review'),
+    )
 
-    hearing_type_type = models.CharField(
+    record = models.ForeignKey(Record, on_delete=models.SET_NULL, null=True)
+    type = models.CharField(
         max_length=50,
         choices=CHOICES)
     date = models.DateField("Date of hearing.")
-
-class Record(models.Model):
-    planner = models.ForeignKey(Planner, on_delete=models.SET_NULL, null=True)
-    location = models.ForeignKey(
-        Location, on_delete=models.SET_NULL, null=True)
-    category = models.ForeignKey(
-        RecordType, on_delete=models.SET_NULL, null=True)
-    record_id = models.CharField(
-        max_length=100,
-        help_text="Planning Department unique identifier for the record")
-
-    parent = models.OneToOneField(
-        "self",
-        related_name="child",
-        help_text="The parent/child relationship for related records.",
-        null=True,
-        on_delete=models.SET_NULL)
-
-    object_id = models.IntegerField(help_text="Esri ArcGIS system ID")
-    template_id = models.CharField(
-        max_length=100, help_text="Unique system identifier for the record")
-    name = models.CharField(
-        max_length=100,
-        help_text="Title of record as provided haphazardly by applicant")
-    description = models.TextField(
-        help_text=("Long description of record as provided haphazardly by "
-                   "applicant"))
-    status = models.CharField(
-        max_length=100,
-        help_text="Current status (e.g. open, closed, accepted, rejected)")
-    construct_cost = models.FloatField(
-        help_text="Estimated construction cost in dollars of the project")
-    related_building_permit = models.CharField(max_length=100,
-        help_text="Related Building Permit Number (significance unknown)")
-    acalink = models.TextField(
-        help_text="Link to this record in Accela Citizen Access")
-    aalink = models.TextField(
-        help_text="Link to this record in Accela Automation")
-    date_opened = models.DateField("Date record was opened")
-    date_closed = models.DateField("Date record was closed")
-
-    project_description = models.ManyToManyField(
-        ProjectDescription,
-        help_text="Type of project")
-    land_use = models.ManyToManyField(
-        LandUse,
-        help_text="Land use type of project")
-    dwelling_type = models.ManyToManyField(
-        DwellingType,
-        help_text="Dwelling type of project")
-    #I think some other relations are missing still
-
-    '''related_building_permit = models.CharField(
-        max_length=100, help_text="Related Building Permit Number")
-    bos_1st_read = models.DateField(help_text="Full Board Hearing Date, First")
-    bos_2nd_read = models.DateField(help_text="Full Board Hearing Date, Second")
-    com_hearing = models.DateField(help_text="Committee Hearing Date")
-    mayoral_sign = models.DateField(
-        help_text="Mayoral Action - Ordinance Signed Date")
-    transmit_date_bos = models.DateField(
-        help_text="Materials Hearing to BOS Clerk Date")
-    com_hearing_date_bos = models.DateField(
-        help_text="Committee Hearing Date - BOS Review")'''
