@@ -127,92 +127,6 @@ class ProjectDescription(models.Model):
         primary_key=True)
 
 
-class MCDReferral(models.Model):
-    _COL_NAME = "MCD_REFERRAL"
-
-    MCD_BAR = "MCD_BAR"
-    MCD_GEN_SPEC_GROCERY = "MCD_GEN_SPEC_GROCERY"
-    MCD_LIMITED_RESTAURANT = "MCD_LIMITED_RESTAURANT"
-    MCD_MASSAGE = "MCD_MASSAGE"
-    MCD_MEDICAL_CANNABIS = "MCD_MEDICAL_CANNABIS"
-    MCD_RESTAURANT = "MCD_RESTAURANT"
-    MCD_TOBACCO = "MCD_TOBACCO"
-
-    MCD_CHOICES = (
-        (MCD_BAR, 'Bar'),
-        (MCD_GEN_SPEC_GROCERY, 'General/Specialty Grocery'),
-        (MCD_LIMITED_RESTAURANT, 'Limited-Restaurant'),
-        (MCD_MASSAGE, 'Massage Establishment'),
-        (MCD_MEDICAL_CANNABIS, 'Medical Cannabis Dispensary'),
-        (MCD_RESTAURANT, 'Restaurant'),
-        (MCD_TOBACCO, 'Tobacco Paraphernalia'),
-    )
-
-    type = models.CharField(
-        max_length=50,
-        choices=MCD_CHOICES,
-        primary_key=True)
-
-
-class EnvironmentalReview(models.Model):
-    _COL_NAME = "ENVIRONMENTAL_REVIEW_TYPE"
-
-    ENV_CEQA = "ENV_CEQA"
-    ENV_COMMUNITY_PLAN_DET = "ENV_COMMUNITY_PLAN_DET"
-    ENV_COMMUNITY_PLAN_EXEMPT = "ENV_COMMUNITY_PLAN_EXEMPT"
-    ENV_COMMUNITY_PLAN_STUDY = "ENV_COMMUNITY_PLAN_STUDY"
-    ENV_EIR_ADDENDUM = "ENV_EIR_ADDENDUM"
-    ENV_EIR = "ENV_EIR"
-    ENV_EIR_SUPPLEMENTAL = "ENV_EIR_SUPPLEMENTAL"
-    ENV_EXEMPT_CERT = "ENV_EXEMPT_CERT"
-    ENV_EXEMPT_CLASS_32 = "ENV_EXEMPT_CLASS_32"
-    ENV_EXEMPT_HISTORIC_IMPACT = "ENV_EXEMPT_HISTORIC_IMPACT"
-    ENV_EXEMPT_HISTORIC_RESOURCE = "ENV_EXEMPT_HISTORIC_RESOURCE"
-    ENV_EXEMPT_STAMP = "ENV_EXEMPT_STAMP"
-    ENV_GEN_RULE_EXCLUSION = "ENV_GEN_RULE_EXCLUSION"
-    ENV_INIT_STUDY_EIR = "ENV_INIT_STUDY_EIR"
-    ENV_INIT_STUDY = "ENV_INIT_STUDY"
-    ENV_INIT_STUDY_NEGATIVE_DEC = "ENV_INIT_STUDY_NEGATIVE_DEC"
-    ENV_NEG_DEC_ADDENDUM = "ENV_NEG_DEC_ADDENDUM"
-    ENV_NOTE = "ENV_NOTE"
-    ENV_PUBLIC_PROJECT_EXEMPT = "ENV_PUBLIC_PROJECT_EXEMPT"
-    ENV_REVIEW_EXEMPTION_OTHER_AGENCY = "ENV_REVIEW_EXEMPTION_OTHER_AGENCY"
-    ENV_TRANSPO_REVIEW = "ENV_TRANSPO_REVIEW"
-
-    ENV_CHOICES = (
-        (ENV_CEQA, 'Other CEQA Guidelines Section'),
-        (ENV_COMMUNITY_PLAN_DET, 'Community Plan-Determination'),
-        (ENV_COMMUNITY_PLAN_EXEMPT, 'Community Plan-Exemption/Exclusion'),
-        (ENV_COMMUNITY_PLAN_STUDY,
-         'Community Plan-Initial Study/Environmental Evaluation'),
-        (ENV_EIR_ADDENDUM, 'EIR Addendum'),
-        (ENV_EIR, 'Environmental Impact Report'),
-        (ENV_EIR_SUPPLEMENTAL, 'EIR Supplemental'),
-        (ENV_EXEMPT_CERT, 'Categorical Exemption-Certificate'),
-        (ENV_EXEMPT_CLASS_32, 'Categorical Exemption-Class 32'),
-        (ENV_EXEMPT_HISTORIC_IMPACT,
-         'Categorical Exemption-Determination of Historic Resource Impact'),
-        (ENV_EXEMPT_HISTORIC_RESOURCE,
-         'Categorical Exemption-Determination of Historic Resource'),
-        (ENV_EXEMPT_STAMP, 'Categorical Exemption-Stamp'),
-        (ENV_GEN_RULE_EXCLUSION, 'General Rule Exclusion'),
-        (ENV_INIT_STUDY_EIR, 'Initial Study-Environmental Impact Report'),
-        (ENV_INIT_STUDY, 'Initial Study'),
-        (ENV_INIT_STUDY_NEGATIVE_DEC, 'Initial Study-Negative Declaration'),
-        (ENV_NEG_DEC_ADDENDUM, 'Negative Declaration Addendum'),
-        (ENV_NOTE, 'Note to File'),
-        (ENV_PUBLIC_PROJECT_EXEMPT, 'Public Project Exemption'),
-        (ENV_REVIEW_EXEMPTION_OTHER_AGENCY,
-         'Review-Exemption Prepared by Another Agency'),
-        (ENV_TRANSPO_REVIEW, 'Transportation Review-Abbreviated'),
-    )
-
-    type = models.CharField(
-        max_length=50,
-        choices=ENV_CHOICES,
-        primary_key=True)
-
-
 class Record(models.Model):
     id = models.IntegerField(help_text="Primary Key", primary_key=True)
     planner = models.ForeignKey(Planner, on_delete=models.SET_NULL, null=True)
@@ -261,15 +175,15 @@ class Record(models.Model):
     project_description = models.ManyToManyField(
         ProjectDescription,
         help_text="Type of project")
-    mcd_referral = models.ForeignKey(
-        MCDReferral,
+    mcd_referral = models.CharField(
+        max_length=150,
         help_text="Medical Cannabis Dispensary referral",
-        on_delete=models.SET_NULL,
+        blank=True,
         null=True)
-    environmental_review = models.ForeignKey(
-        EnvironmentalReview,
+    environmental_review = models.CharField(
+        max_length=150,
         help_text="Environmental Review type",
-        on_delete=models.SET_NULL,
+        blank=True,
         null=True)
     # I think some other relations are missing still
 

@@ -10,8 +10,6 @@ from ppts.models import Location
 from ppts.models import Planner
 from ppts.models import ProjectFeature
 from ppts.models import ProjectDescription
-from ppts.models import MCDReferral
-from ppts.models import EnvironmentalReview
 from ppts.models import Record
 from ppts.models import RecordType
 
@@ -29,8 +27,6 @@ Run like: rm db.sqlite3 && \
         self.record_types = dict()
         self._planners = dict()
         self._project_descriptions = dict()
-        self._mcd_referrals = dict()
-        self._environmental_reviews = dict()
 
     def add_arguments(self, parser):
         parser.add_argument('filename')
@@ -95,32 +91,6 @@ Run like: rm db.sqlite3 && \
                     continue
                 pds.append(self._project_descriptions[col])
         return pds
-
-    def mcd(self, row):
-        mcd = None
-        val = getattr(row, MCDReferral._COL_NAME, "")
-        if val and not pd.isnull(val):
-            if val in self._mcd_referrals:
-                mcd = self._mcd_referrals[val]
-            else:
-                mcd = MCDReferral(type=val)
-                # print("Creating mcd: %s" % mcd.__dict__)
-                mcd.save()
-                self._mcd_referrals[val] = mcd
-        return mcd
-
-    def env(self, row):
-        env = None
-        val = getattr(row, EnvironmentalReview._COL_NAME, "")
-        if val and not pd.isnull(val):
-            if val in self._environmental_reviews:
-                env = self._environmental_reviews[val]
-            else:
-                env = EnvironmentalReview(type=val)
-                print("Creating env %s" % env.__dict__)
-                env.save()
-                self._environmental_reviews[val] = env
-        return env
 
     def dwelling_type(self, row, record):
         prefix = "RESIDENTIAL"
@@ -229,8 +199,8 @@ Run like: rm db.sqlite3 && \
                 mayoral_sign=self.pd_date(row.MAYORAL_SIGN),
                 transmit_date_bos=self.pd_date(row.TRANSMIT_DATE_BOS),
                 com_hearing_date_bos=self.pd_date(row.COM_HEARING_DATE_BOS),
-                mcd_referral=self.mcd(row),
-                environmental_review=self.env(row),
+                mcd_referral=row.MCD_REFERRAL,
+                environmental_review=row.ENVIRONMENTAL_REVIEW_TYPE,
             )
             project_description_map[i] = self.project_descriptions(row)
             records.append(record)
