@@ -7,11 +7,13 @@ class Location(models.Model):
     shape_length = models.DecimalField(
         max_digits=15,
         decimal_places=8,
-        help_text="Perimeter of polygon")
+        help_text="Perimeter of polygon",
+        null=True)
     shape_area = models.DecimalField(
         max_digits=15,
         decimal_places=15,
-        help_text="Area of polygon")
+        help_text="Area of polygon",
+        null=True)
     address = models.CharField(
         max_length=250,
         help_text=("An address for this location. The format of these is "
@@ -212,6 +214,7 @@ class EnvironmentalReview(models.Model):
 
 
 class Record(models.Model):
+    id = models.IntegerField(help_text="Primary Key", primary_key=True)
     planner = models.ForeignKey(Planner, on_delete=models.SET_NULL, null=True)
     location = models.ForeignKey(
         Location, on_delete=models.SET_NULL, null=True)
@@ -228,7 +231,9 @@ class Record(models.Model):
         null=True,
         on_delete=models.SET_NULL)
 
-    object_id = models.IntegerField(help_text="Esri ArcGIS system ID")
+    object_id = models.IntegerField(
+        help_text="Esri ArcGIS system ID",
+        null=True)
     template_id = models.CharField(
         max_length=100, help_text="Unique system identifier for the record")
     name = models.CharField(
@@ -241,7 +246,8 @@ class Record(models.Model):
         max_length=100,
         help_text="Current status (e.g. open, closed, accepted, rejected)")
     construct_cost = models.FloatField(
-        help_text="Estimated construction cost in dollars of the project")
+        help_text="Estimated construction cost in dollars of the project",
+        null=True)
     related_building_permit = models.CharField(
         max_length=100,
         help_text="Related Building Permit Number (significance unknown)")
@@ -249,8 +255,8 @@ class Record(models.Model):
         help_text="Link to this record in Accela Citizen Access")
     aalink = models.TextField(
         help_text="Link to this record in Accela Automation")
-    date_opened = models.DateField("Date record was opened")
-    date_closed = models.DateField("Date record was closed")
+    date_opened = models.DateField("Date record was opened", null=True)
+    date_closed = models.DateField("Date record was closed", null=True)
 
     project_description = models.ManyToManyField(
         ProjectDescription,
@@ -260,7 +266,7 @@ class Record(models.Model):
         help_text="Medical Cannabis Dispensary referral",
         on_delete=models.SET_NULL,
         null=True)
-    environment_review = models.ForeignKey(
+    environmental_review = models.ForeignKey(
         EnvironmentalReview,
         help_text="Environmental Review type",
         on_delete=models.SET_NULL,
@@ -270,16 +276,23 @@ class Record(models.Model):
     related_building_permit = models.CharField(
         max_length=100, help_text="Related Building Permit Number")
     bos_1st_read = models.DateField(
-        help_text="Full Board Hearing Date, First")
+        help_text="Full Board Hearing Date, First",
+        null=True)
     bos_2nd_read = models.DateField(
-        help_text="Full Board Hearing Date, Second")
-    com_hearing = models.DateField(help_text="Committee Hearing Date")
+        help_text="Full Board Hearing Date, Second",
+        null=True)
+    com_hearing = models.DateField(
+        help_text="Committee Hearing Date",
+        null=True)
     mayoral_sign = models.DateField(
-        help_text="Mayoral Action - Ordinance Signed Date")
+        help_text="Mayoral Action - Ordinance Signed Date",
+        null=True)
     transmit_date_bos = models.DateField(
-        help_text="Materials Hearing to BOS Clerk Date")
+        help_text="Materials Hearing to BOS Clerk Date",
+        null=True)
     com_hearing_date_bos = models.DateField(
-        help_text="Committee Hearing Date - BOS Review")
+        help_text="Committee Hearing Date - BOS Review",
+        null=True)
 
 
 class LandUse(models.Model):
@@ -307,15 +320,18 @@ class LandUse(models.Model):
     exist = models.DecimalField(
         max_digits=15,
         decimal_places=2,
-        help_text="Existing amount")
+        help_text="Existing amount",
+        null=True)
     proposed = models.DecimalField(
         max_digits=15,
         decimal_places=2,
-        help_text="Proposed amount")
+        help_text="Proposed amount",
+        null=True)
     net = models.DecimalField(
         max_digits=15,
         decimal_places=2,
-        help_text="Net change")
+        help_text="Net change",
+        null=True)
 
 
 class ProjectFeature(models.Model):
@@ -364,15 +380,18 @@ class ProjectFeature(models.Model):
     exist = models.DecimalField(
         max_digits=15,
         decimal_places=2,
-        help_text="Existing amount")
+        help_text="Existing amount",
+        null=True)
     proposed = models.DecimalField(
         max_digits=15,
         decimal_places=2,
-        help_text="Proposed amount")
+        help_text="Proposed amount",
+        null=True)
     net = models.DecimalField(
         max_digits=15,
         decimal_places=2,
-        help_text="Net change")
+        help_text="Net change",
+        null=True)
 
 
 class DwellingType(models.Model):
@@ -410,19 +429,24 @@ class DwellingType(models.Model):
     exist = models.DecimalField(
         max_digits=15,
         decimal_places=2,
-        help_text="Existing amount")
+        help_text="Existing amount",
+        null=True)
     proposed = models.DecimalField(
         max_digits=15,
         decimal_places=2,
-        help_text="Proposed amount")
+        help_text="Proposed amount",
+        null=True)
     net = models.DecimalField(
         max_digits=15,
         decimal_places=2,
-        help_text="Net change")
+        help_text="Net change",
+        null=True)
     area = models.DecimalField(
         max_digits=15,
         decimal_places=2,
-        help_text="Area (optional)", blank=True)
+        help_text="Area (optional)",
+        blank=True,
+        null=True)
 
 
 class HearingDate(models.Model):
