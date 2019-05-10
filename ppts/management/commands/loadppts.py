@@ -246,6 +246,7 @@ Run like: rm db.sqlite3 && \
                             projectdescription_id=pdi.pk,
                             record_id=rid))
                 Record.project_description.through.objects.bulk_create(rpis)
+                project_description_map = dict()
                 DwellingType.objects.bulk_create(dwelling_types)
                 ProjectFeature.objects.bulk_create(project_features)
                 LandUse.objects.bulk_create(land_uses)
@@ -262,6 +263,7 @@ Run like: rm db.sqlite3 && \
                     projectdescription_id=pdi.pk,
                     record_id=rid))
         Record.project_description.through.objects.bulk_create(rpis)
+        project_description_map = dict()
         DwellingType.objects.bulk_create(dwelling_types)
         ProjectFeature.objects.bulk_create(project_features)
         LandUse.objects.bulk_create(land_uses)
