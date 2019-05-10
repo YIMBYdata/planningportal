@@ -447,27 +447,3 @@ class DwellingType(models.Model):
         help_text="Area (optional)",
         blank=True,
         null=True)
-
-
-class HearingDate(models.Model):
-    BOS_1ST_READ = "BOS_1ST_READ"
-    BOS_2ND_READ = "BOS_2ND_READ"
-    COM_HEARING = "COM_HEARING"
-    MAYORAL_SIGN = "MAYORAL_SIGN"
-    TRANSMIT_DATE_BOS = "TRANSMIT_DATE_BOS"
-    COM_HEARING_DATE_BOS = "COM_HEARING_DATE_BOS"
-
-    CHOICES = (
-        (BOS_1ST_READ, 'Full Board Hearing Date 1'),
-        (BOS_2ND_READ, 'Full Board Hearing Date 2'),
-        (COM_HEARING, 'Committee Hearing Date'),
-        (MAYORAL_SIGN, 'Mayoral Action - Ordinance Signed Date'),
-        (TRANSMIT_DATE_BOS, 'Materials Hearing to BOS Clerk Date'),
-        (COM_HEARING_DATE_BOS, 'Committee Hearing Date - BOS Review'),
-    )
-
-    record = models.ForeignKey(Record, on_delete=models.SET_NULL, null=True)
-    type = models.CharField(
-        max_length=50,
-        choices=CHOICES)
-    date = models.DateField("Date of hearing.")

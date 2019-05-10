@@ -9,7 +9,6 @@ from ppts.models import LandUse
 from ppts.models import Location
 from ppts.models import Planner
 from ppts.models import ProjectFeature
-from ppts.models import HearingDate
 from ppts.models import ProjectDescription
 from ppts.models import MCDReferral
 from ppts.models import EnvironmentalReview
@@ -173,17 +172,6 @@ Run like: rm db.sqlite3 && \
                     net=net))
         return lus
 
-    def hearing_date(self, row, record):
-        hds = []
-        for (col, _ignore) in HearingDate.CHOICES:
-            val = getattr(row, col, None)  # This should be a date
-            if val:
-                hds.append(HearingDate(
-                    record=record,
-                    type=col,
-                    date=val))
-        return hds
-
     def pd_date(self, d):
         if pd.isnull(d) or isinstance(d, str):
             return None
@@ -210,7 +198,6 @@ Run like: rm db.sqlite3 && \
         dwelling_types = []
         project_features = []
         land_uses = []
-        hearing_dates = []
         i = -1
         project_description_map = dict()
         for row in data.itertuples():
@@ -247,7 +234,6 @@ Run like: rm db.sqlite3 && \
             dwelling_types.extend(self.dwelling_type(row, record))
             project_features.extend(self.project_feature(row, record))
             land_uses.extend(self.land_use(row, record))
-            hearing_dates.extend(self.hearing_date(row, record))
             if len(records) > 100:
                 Record.objects.bulk_create(records)
                 rpis = []
@@ -260,12 +246,10 @@ Run like: rm db.sqlite3 && \
                 DwellingType.objects.bulk_create(dwelling_types)
                 ProjectFeature.objects.bulk_create(project_features)
                 LandUse.objects.bulk_create(land_uses)
-                HearingDate.objects.bulk_create(hearing_dates)
                 records = []
                 dwelling_types = []
                 project_features = []
                 land_uses = []
-                hearing_dates = []
 
         Record.objects.bulk_create(records)
         rpis = []
@@ -278,12 +262,10 @@ Run like: rm db.sqlite3 && \
         DwellingType.objects.bulk_create(dwelling_types)
         ProjectFeature.objects.bulk_create(project_features)
         LandUse.objects.bulk_create(land_uses)
-        HearingDate.objects.bulk_create(hearing_dates)
         records = []
         dwelling_types = []
         project_features = []
         land_uses = []
-        hearing_dates = []
 
         comp_timer.printreport()
 
