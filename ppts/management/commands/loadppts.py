@@ -35,6 +35,11 @@ Run like: rm db.sqlite3 && \
     def add_arguments(self, parser):
         parser.add_argument('filename')
 
+    def pd_date(self, d):
+        if pd.isnull(d) or isinstance(d, str):
+            return None
+        return d
+
     def record_type(self, row):
         # TODO: clean the data, as in Tristan's script
         if row.record_type_category in self.record_types:
@@ -171,11 +176,6 @@ Run like: rm db.sqlite3 && \
                     proposed=prop,
                     net=net))
         return lus
-
-    def pd_date(self, d):
-        if pd.isnull(d) or isinstance(d, str):
-            return None
-        return d
 
     def handle(self, *args, **options):
         comp_timer = Timer()
