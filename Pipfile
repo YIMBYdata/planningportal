@@ -5,6 +5,7 @@ name = "pypi"
 
 [dev-packages]
 Werkzeug = "==0.14.1"
+ipdb = "*"
 
 [packages]
 dj-database-url = "==0.5.0"
