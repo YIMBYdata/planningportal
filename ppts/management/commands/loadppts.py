@@ -18,7 +18,12 @@ from ppts.models import RecordType
 
 
 class Command(BaseCommand):
-    help = 'Imports the PPTS data into the database'
+    help = """Imports the PPTS data into the database.
+
+Run like: rm db.sqlite3 && \
+    python manage.py migrate && \
+    python manage.py loadppts /path/to/ppts.csv
+"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
