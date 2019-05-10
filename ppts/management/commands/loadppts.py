@@ -200,8 +200,11 @@ Run like: rm db.sqlite3 && \
         land_uses = []
         i = -1
         project_description_map = dict()
+        print("Creating %d rows" % len(data))
         for row in data.itertuples():
             i += 1
+            if i % 1000 == 0:
+                print(i)
             record = Record(
                 id=i,
                 planner=self.planner(row),
@@ -234,7 +237,7 @@ Run like: rm db.sqlite3 && \
             dwelling_types.extend(self.dwelling_type(row, record))
             project_features.extend(self.project_feature(row, record))
             land_uses.extend(self.land_use(row, record))
-            if len(records) > 100:
+            if len(records) > 10000:
                 Record.objects.bulk_create(records)
                 rpis = []
                 for (rid, pds) in project_description_map.items():
