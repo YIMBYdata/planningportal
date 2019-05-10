@@ -40,6 +40,12 @@ Run like: rm db.sqlite3 && \
             return None
         return d
 
+    def make_enum(self, obj):
+        d = dict()
+        for (col, _ignore) in obj.CHOICES:
+            d[col] = obj.objects.create(type=col)
+        return d
+
     def record_type(self, row):
         # TODO: clean the data, as in Tristan's script
         if row.record_type_category in self.record_types:
@@ -87,14 +93,7 @@ Run like: rm db.sqlite3 && \
                         checked.lower() == "unchecked" and
                         checked.lower() == "no"):
                     continue
-                if col in self._project_descriptions:
-                    pds.append(self._project_descriptions[col])
-                else:
-                    _pd = ProjectDescription(type=col)
-                    # print("Creating project decsription %s" % _pd.__dict__)
-                    _pd.save()
-                    self._project_descriptions[col] = _pd
-                    pds.append(_pd)
+                pds.append(self._project_descriptions[col])
         return pds
 
     def mcd(self, row):
@@ -178,6 +177,7 @@ Run like: rm db.sqlite3 && \
         return lus
 
     def handle(self, *args, **options):
+        self._project_descriptions = self.make_enum(ProjectDescription)
         comp_timer = Timer()
         # import ipdb
         # ipdb.set_trace()
