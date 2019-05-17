@@ -307,16 +307,22 @@ Run like: rm db.sqlite3 && \
                             projectdescription_id=pdi.pk,
                             record_id=rid))
                 Record.project_description.through.objects.bulk_create(rpis)
-                project_description_map = dict()
+                rel = []
+                for relation in record_relations:
+                    rel.append(Record.parent.through(from_record_id = relation[0],to_record_id = relation[1]))
+                Record.parent.through.objects.bulk_create(rel)
                 DwellingType.objects.bulk_create(dwelling_types)
                 ProjectFeature.objects.bulk_create(project_features)
                 LandUse.objects.bulk_create(land_uses)
+
+                project_description_map = dict()
                 records = []
                 dwelling_types = []
                 project_features = []
                 land_uses = []
                 locations_unique = []
                 locations_list = []
+                record_relations = []
         
         Location.objects.bulk_create(locations_unique)
         for rid, lid in enumerate(locations_list):
