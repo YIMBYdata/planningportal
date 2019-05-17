@@ -31,6 +31,8 @@ Run like: rm db.sqlite3 && \
 
     def add_arguments(self, parser):
         parser.add_argument('filename')
+        parser.add_argument('--quicktest',action='store_true',
+            help='import only 1000 rows')
 
     def pd_date(self, d):
         if pd.isnull(d) or isinstance(d, str):
@@ -246,7 +248,7 @@ Run like: rm db.sqlite3 && \
                     land_uses = []
                     locations = []
             #early abort for testing purposes
-            if i >= 999:
+            if options['quicktest']:
                 break
         
         #TODO: figure out why records is failing to create a foreign key for locations
