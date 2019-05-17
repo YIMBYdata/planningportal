@@ -29,6 +29,8 @@ Run like: rm db.sqlite3 && \
         self._project_descriptions = dict()
         self._locations = dict()
         self._location_counter = 0
+        self._lost_children = dict()
+        self._lost_parents = dict()
 
     def add_arguments(self, parser):
         parser.add_argument('filename')
@@ -173,6 +175,49 @@ Run like: rm db.sqlite3 && \
                     proposed=prop,
                     net=net))
         return lus
+    
+    def parent_relations(self, row, record):
+        #self._lost_children maps record_ids of children that have not yet found parents
+        #to dicts whose keys are the record_ids of the lost children, and values are the ids
+        #self._lost_parents is same as above but with children and parents swapped
+        #rel is a list of (child id, parent id) tuples
+        
+        rel = []
+        #check if this row relates to previous rows
+        if row.record_id in self._lost_parents:
+            found_parents = self._lost_parents.pop(row.record_id)
+        else:
+            found_parents = dict()
+        if row.record_id in self._lost_children:
+            found_children = self._lost_children.pop(row.record_id)
+        else:
+            found_children = dict()
+        
+        #loop through the record_ids of parents of this row
+        if not pd.isnull(row.parent):
+            row_parents = row.parent.split(',')
+            for row_parent in row_parents:
+                #if a match for the parent is found, append the match to rel
+                if row_parent in found_parents:
+                    rel.append((record.id,found_parents[row_parent]))
+                else:
+                    #if a match for the parent is not found, add this record to lost_children
+                    if row_parent not in self._lost_children:
+                        self._lost_children[row_parent] = dict()
+                    self._lost_children[row_parent][row.record_id] = record.id
+        
+        #do the same for children
+        if not pd.isnull(row.children):
+            row_children = row.children.split(',')
+            for row_child in row_children:
+                if row_child in found_children:
+                    rel.append((found_children[row_child],record.id))
+                else:
+                    if row_child not in self._lost_parents:
+                        self._lost_parents[row_child] = dict()
+                    self._lost_parents[row_child][row.record_id] = record.id
+        
+        return rel
 
     def handle(self, *args, **options):
         comp_timer = Timer()
@@ -198,6 +243,7 @@ Run like: rm db.sqlite3 && \
         project_features = []
         land_uses = []
         locations_unique = []
+        record_relations = []
         i = -1
         project_description_map = dict()
         locations_list = []
@@ -205,10 +251,8 @@ Run like: rm db.sqlite3 && \
         #print("Creating %d rows" % len(data))
         for chunk in data_reader:
             print(i+1)
-            j = -1
             for row in chunk.itertuples():
                 i += 1
-                j += 1
                 record = Record(
                     id=i,
                     planner=self.planner(row),
@@ -237,6 +281,7 @@ Run like: rm db.sqlite3 && \
                     environmental_review=row.ENVIRONMENTAL_REVIEW_TYPE,
                 )
                 
+                record_relations.extend( self.parent_relations(row, record) )
                 loc,newloc = self.location(row)
                 if newloc:
                     locations_unique.append(loc)
@@ -247,31 +292,31 @@ Run like: rm db.sqlite3 && \
                 dwelling_types.extend(self.dwelling_type(row, record))
                 project_features.extend(self.project_feature(row, record))
                 land_uses.extend(self.land_use(row, record))
-                if len(records) > 10000:
-                    Location.objects.bulk_create(locations_unique)
-                    for rid, lid in enumerate(locations_list):
-                        records[rid].location_id = lid
-                    Record.objects.bulk_create(records)
-                    rpis = []
-                    for (rid, pds) in project_description_map.items():
-                        for pdi in pds:
-                            rpis.append(Record.project_description.through(
-                                projectdescription_id=pdi.pk,
-                                record_id=rid))
-                    Record.project_description.through.objects.bulk_create(rpis)
-                    project_description_map = dict()
-                    DwellingType.objects.bulk_create(dwelling_types)
-                    ProjectFeature.objects.bulk_create(project_features)
-                    LandUse.objects.bulk_create(land_uses)
-                    records = []
-                    dwelling_types = []
-                    project_features = []
-                    land_uses = []
-                    locations_unique = []
-                    locations_list = []
             #early abort for testing purposes
             if options['quicktest']:
                 break
+            if len(records) > 10000:
+                Location.objects.bulk_create(locations_unique)
+                for rid, lid in enumerate(locations_list):
+                    records[rid].location_id = lid
+                Record.objects.bulk_create(records)
+                rpis = []
+                for (rid, pds) in project_description_map.items():
+                    for pdi in pds:
+                        rpis.append(Record.project_description.through(
+                            projectdescription_id=pdi.pk,
+                            record_id=rid))
+                Record.project_description.through.objects.bulk_create(rpis)
+                project_description_map = dict()
+                DwellingType.objects.bulk_create(dwelling_types)
+                ProjectFeature.objects.bulk_create(project_features)
+                LandUse.objects.bulk_create(land_uses)
+                records = []
+                dwelling_types = []
+                project_features = []
+                land_uses = []
+                locations_unique = []
+                locations_list = []
         
         Location.objects.bulk_create(locations_unique)
         for rid, lid in enumerate(locations_list):
@@ -284,16 +329,22 @@ Run like: rm db.sqlite3 && \
                     projectdescription_id=pdi.pk,
                     record_id=rid))
         Record.project_description.through.objects.bulk_create(rpis)
-        project_description_map = dict()
+        rel = []
+        for relation in record_relations:
+            rel.append(Record.parent.through(from_record_id = relation[0],to_record_id = relation[1]))
+        Record.parent.through.objects.bulk_create(rel)
         DwellingType.objects.bulk_create(dwelling_types)
         ProjectFeature.objects.bulk_create(project_features)
         LandUse.objects.bulk_create(land_uses)
+        
+        project_description_map = dict()
         records = []
         dwelling_types = []
         project_features = []
         land_uses = []
         locations_unique = []
         locations_list = []
+        record_relations = []
 
         comp_timer.printreport()
 

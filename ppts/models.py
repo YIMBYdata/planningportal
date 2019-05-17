@@ -139,14 +139,10 @@ class Record(models.Model):
         max_length=100,
         help_text="Planning Department unique identifier for the record")
     
-    #pretty sure this will have to be changed to many-to-many
-    #because a record may have multiple parents or children
-    parent = models.OneToOneField(
+    parent = models.ManyToManyField(
         "self",
         related_name="child",
-        help_text="The parent/child relationship for related records.",
-        null=True,
-        on_delete=models.SET_NULL)
+        help_text="The parent/child relationship for related records.")
 
     object_id = models.IntegerField(
         help_text="Esri ArcGIS system ID",
