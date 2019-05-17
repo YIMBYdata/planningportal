@@ -80,14 +80,14 @@ Run like: rm db.sqlite3 && \
     def location(self, row):
         newloc = row.the_geom not in self._locations
         if newloc:
-            location = Location(the_geom=row.the_geom,
+            loc = Location(the_geom=row.the_geom,
                 shape_length=row.Shape_Length,
                 shape_area=row.Shape_Area,
                 address=row.address)
-            self._locations[row.the_geom] = location
+            self._locations[row.the_geom] = loc
         else:
-            location = self._locations[row.the_geom]
-        return location, newloc
+            loc = self._locations[row.the_geom]
+        return loc, newloc
         #TODO: clean up address
 
     def project_descriptions(self, row):
@@ -164,8 +164,7 @@ Run like: rm db.sqlite3 && \
         # import ipdb
         # ipdb.set_trace()
         self._project_descriptions = self.make_enum(ProjectDescription)
-        #TODO: remove use of pandas, and read files line by line
-        data = pd.read_csv(
+        data_reader = pd.read_csv(
             options['filename'],
             parse_dates=[
                 "date_opened",
@@ -177,7 +176,8 @@ Run like: rm db.sqlite3 && \
                 "TRANSMIT_DATE_BOS",
                 "COM_HEARING_DATE_BOS",
             ],
-            infer_datetime_format=True)
+            infer_datetime_format=True,
+            chunksize=1000)
         records = []
         dwelling_types = []
         project_features = []
@@ -185,69 +185,72 @@ Run like: rm db.sqlite3 && \
         locations = []
         i = -1
         project_description_map = dict()
-        print("Creating %d rows" % len(data))
-        for row in data.itertuples():
-            i += 1
-            if i % 1000 == 0:
-                print(i)
-            location,newloc = self.location(row)
-            if newloc:
-                locations.append(location)
-            record = Record(
-                id=i,
-                planner=self.planner(row),
-                location=location,
-                record_type=self.record_type(row),
-                record_id=row.record_id,
-                # TODO: parent=
-                object_id=row.OBJECTID,
-                template_id=row.templateid,
-                name=row.record_name,
-                description=row.description,
-                status=row.record_status,
-                construct_cost=row.constructcost,
-                related_building_permit=row.RELATED_BUILDING_PERMIT,
-                acalink=row.acalink,
-                aalink=row.aalink,
-                date_opened=self.pd_date(row.date_opened),
-                date_closed=self.pd_date(row.date_closed),
-                bos_1st_read=self.pd_date(row.BOS_1ST_READ),
-                bos_2nd_read=self.pd_date(row.BOS_2ND_READ),
-                com_hearing=self.pd_date(row.COM_HEARING),
-                mayoral_sign=self.pd_date(row.MAYORAL_SIGN),
-                transmit_date_bos=self.pd_date(row.TRANSMIT_DATE_BOS),
-                com_hearing_date_bos=self.pd_date(row.COM_HEARING_DATE_BOS),
-                mcd_referral=row.MCD_REFERRAL,
-                environmental_review=row.ENVIRONMENTAL_REVIEW_TYPE,
-            )
-            project_description_map[i] = self.project_descriptions(row)
-            records.append(record)
-            dwelling_types.extend(self.dwelling_type(row, record))
-            project_features.extend(self.project_feature(row, record))
-            land_uses.extend(self.land_use(row, record))
-            if len(records) > 10000:
-                Record.objects.bulk_create(records)
-                rpis = []
-                for (rid, pds) in project_description_map.items():
-                    for pdi in pds:
-                        rpis.append(Record.project_description.through(
-                            projectdescription_id=pdi.pk,
-                            record_id=rid))
-                Record.project_description.through.objects.bulk_create(rpis)
-                project_description_map = dict()
-                DwellingType.objects.bulk_create(dwelling_types)
-                ProjectFeature.objects.bulk_create(project_features)
-                LandUse.objects.bulk_create(land_uses)
-                Location.objects.bulk_create(locations)
-                records = []
-                dwelling_types = []
-                project_features = []
-                land_uses = []
-                locations = []
+        #sadly there is no way to count the number of rows without reading entire file first.
+        #print("Creating %d rows" % len(data))
+        for chunk in data_reader:
+            print(i+1)
+            for row in chunk.itertuples():
+                i += 1
+                loc,newloc = self.location(row)
+                if newloc:
+                    locations.append(loc)
+                record = Record(
+                    id=i,
+                    planner=self.planner(row),
+                    location=loc,
+                    record_type=self.record_type(row),
+                    record_id=row.record_id,
+                    # TODO: parent=
+                    object_id=row.OBJECTID,
+                    template_id=row.templateid,
+                    name=row.record_name,
+                    description=row.description,
+                    status=row.record_status,
+                    construct_cost=row.constructcost,
+                    related_building_permit=row.RELATED_BUILDING_PERMIT,
+                    acalink=row.acalink,
+                    aalink=row.aalink,
+                    date_opened=self.pd_date(row.date_opened),
+                    date_closed=self.pd_date(row.date_closed),
+                    bos_1st_read=self.pd_date(row.BOS_1ST_READ),
+                    bos_2nd_read=self.pd_date(row.BOS_2ND_READ),
+                    com_hearing=self.pd_date(row.COM_HEARING),
+                    mayoral_sign=self.pd_date(row.MAYORAL_SIGN),
+                    transmit_date_bos=self.pd_date(row.TRANSMIT_DATE_BOS),
+                    com_hearing_date_bos=self.pd_date(row.COM_HEARING_DATE_BOS),
+                    mcd_referral=row.MCD_REFERRAL,
+                    environmental_review=row.ENVIRONMENTAL_REVIEW_TYPE,
+                )
+                project_description_map[i] = self.project_descriptions(row)
+                records.append(record)
+                dwelling_types.extend(self.dwelling_type(row, record))
+                project_features.extend(self.project_feature(row, record))
+                land_uses.extend(self.land_use(row, record))
+                if len(records) > 10000:
+                    Location.objects.bulk_create(locations)
+                    Record.objects.bulk_create(records)
+                    rpis = []
+                    for (rid, pds) in project_description_map.items():
+                        for pdi in pds:
+                            rpis.append(Record.project_description.through(
+                                projectdescription_id=pdi.pk,
+                                record_id=rid))
+                    Record.project_description.through.objects.bulk_create(rpis)
+                    project_description_map = dict()
+                    DwellingType.objects.bulk_create(dwelling_types)
+                    ProjectFeature.objects.bulk_create(project_features)
+                    LandUse.objects.bulk_create(land_uses)
+                    records = []
+                    dwelling_types = []
+                    project_features = []
+                    land_uses = []
+                    locations = []
             #early abort for testing purposes
-            if len(records) > 1000:
+            if i >= 999:
                 break
         
+        #TODO: figure out why records is failing to create a foreign key for locations
+        Location.objects.bulk_create(locations)
         Record.objects.bulk_create(records)
         rpis = []
         for (rid, pds) in project_description_map.items():
@@ -260,7 +263,6 @@ Run like: rm db.sqlite3 && \
         DwellingType.objects.bulk_create(dwelling_types)
         ProjectFeature.objects.bulk_create(project_features)
         LandUse.objects.bulk_create(land_uses)
-        Location.objects.bulk_create(locations)
         records = []
         dwelling_types = []
         project_features = []
