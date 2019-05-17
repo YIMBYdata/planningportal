@@ -74,7 +74,7 @@ class ProjectDescription(models.Model):
     AFFORDABLE_UNITS = "AFFORDABLE_UNITS"
     CHANGE_OF_USE = "CHANGE_OF_USE"
     DEMOLITION = "DEMOLITION"
-    ENVIRONMENTAL_REVIEW_TYPE = "ENVIRONMENTAL_REVIEW_TYPE"
+    #ENVIRONMENTAL_REVIEW_TYPE = "ENVIRONMENTAL_REVIEW_TYPE"
     FACADE_ALT = "FACADE_ALT"
     FINANCIAL = "FINANCIAL"
     FORMULA_RETAIL = "FORMULA_RETAIL"
@@ -83,7 +83,7 @@ class ProjectDescription(models.Model):
     LOT_LINE_ADJUST = "LOT_LINE_ADJUST"
     MASSAGE = "MASSAGE"
     MCD = "MCD"
-    MCD_REFERRAL = "MCD_REFERRAL"
+    #MCD_REFERRAL = "MCD_REFERRAL"
     NEW_CONSTRUCTION = "NEW_CONSTRUCTION"
     OTHER_NON_RES = "OTHER_NON_RES"
     OTHER_PRJ_DESC = "OTHER_PRJ_DESC"
@@ -100,7 +100,7 @@ class ProjectDescription(models.Model):
         (AFFORDABLE_UNITS, '100% Affordable Housing'),
         (CHANGE_OF_USE, 'Change of Use'),
         (DEMOLITION, 'Demolition'),
-        (ENVIRONMENTAL_REVIEW_TYPE, 'Environmental Review'),
+        #(ENVIRONMENTAL_REVIEW_TYPE, 'Environmental Review'),
         (FACADE_ALT, 'Facade Alterations'),
         (FINANCIAL, 'Financial Services'),
         (FORMULA_RETAIL, 'Formula Retail'),
@@ -109,7 +109,7 @@ class ProjectDescription(models.Model):
         (LOT_LINE_ADJUST, 'Lot Line Adjustment-Subdivision'),
         (MASSAGE, 'Massage Establishment'),
         (MCD, 'Medical Cannabis Dispensary'),
-        (MCD_REFERRAL, 'Public Health Review - MCD'),
+        #(MCD_REFERRAL, 'Public Health Review - MCD'),
         (NEW_CONSTRUCTION, 'New Construction'),
         (OTHER_NON_RES, 'Non-Residential Use Type - Other'),
         (OTHER_PRJ_DESC, 'Other'),

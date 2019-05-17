@@ -27,14 +27,19 @@ Run like: rm db.sqlite3 && \
         self.record_types = dict()
         self._planners = dict()
         self._project_descriptions = dict()
+        self._locations = dict()
 
     def add_arguments(self, parser):
         parser.add_argument('filename')
 
     def pd_date(self, d):
-        #TODO: replace this when I remove pandas
         if pd.isnull(d) or isinstance(d, str):
             return None
+        return d
+    
+    def null_to_default(self, d, default):
+        if pd.isnull(d):
+            return default
         return d
 
     def make_enum(self, obj):
@@ -73,12 +78,17 @@ Run like: rm db.sqlite3 && \
         return planner
 
     def location(self, row):
-        #TODO: make this into a proper one-to-many relationship, similar to planner
-        return Location(
-            the_geom=row.the_geom,
-            shape_length=row.Shape_Length,
-            shape_area=row.Shape_Area,
-            address=row.address)
+        newloc = row.the_geom not in self._locations
+        if newloc:
+            location = Location(the_geom=row.the_geom,
+                shape_length=row.Shape_Length,
+                shape_area=row.Shape_Area,
+                address=row.address)
+            self._locations[row.the_geom] = location
+        else:
+            location = self._locations[row.the_geom]
+        return location, newloc
+        #TODO: clean up address
 
     def project_descriptions(self, row):
         # The choices on ProjectDescription are the column names in the
@@ -86,7 +96,6 @@ Run like: rm db.sqlite3 && \
         pds = []
         for (col, _ignore) in ProjectDescription.CHOICES:
             checked = getattr(row, col, False)
-            #TODO: replace this when I remove pandas
             if checked and not pd.isnull(checked):
                 if (isinstance(checked, str) and
                         checked.lower() == "unchecked" and
@@ -99,10 +108,10 @@ Run like: rm db.sqlite3 && \
         prefix = "RESIDENTIAL"
         dts = []
         for (infix, _ignore) in DwellingType.CHOICES:
-            exist = getattr(row, "_".join([prefix, infix, "EXIST"]), 0)
-            prop = getattr(row, "_".join([prefix, infix, "PROP"]), 0)
-            net = getattr(row, "_".join([prefix, infix, "NET"]), 0)
-            area = getattr(row, "_".join([prefix, infix, "AREA"]), 0)
+            exist = self.null_to_default(getattr(row, "_".join([prefix, infix, "EXIST"]), 0), 0)
+            prop = self.null_to_default(getattr(row, "_".join([prefix, infix, "PROP"]), 0), 0)
+            net = self.null_to_default(getattr(row, "_".join([prefix, infix, "NET"]), 0), 0)
+            area = self.null_to_default(getattr(row, "_".join([prefix, infix, "AREA"]), 0), 0)
             if any([exist, prop, net, area]):
                 dts.append(DwellingType(
                     record=record,
@@ -119,10 +128,10 @@ Run like: rm db.sqlite3 && \
         for (infix, _ignore) in ProjectFeature.CHOICES:
             other_name = ""
             if infix == ProjectFeature.OTHER:
-                other_name = getattr(row, "_".join([prefix, infix]), "")
-            exist = getattr(row, "_".join([prefix, infix, "EXIST"]), 0)
-            prop = getattr(row, "_".join([prefix, infix, "PROP"]), 0)
-            net = getattr(row, "_".join([prefix, infix, "NET"]), 0)
+                other_name = self.null_to_default(getattr(row, "_".join([prefix, infix]), ""), "")
+            exist = self.null_to_default(getattr(row, "_".join([prefix, infix, "EXIST"]), 0), 0)
+            prop = self.null_to_default(getattr(row, "_".join([prefix, infix, "PROP"]), 0), 0)
+            net = self.null_to_default(getattr(row, "_".join([prefix, infix, "NET"]), 0), 0)
             # TODO: cleanup related to the empty PROP columns
             if any([exist, prop, net, other_name]):
                 pfs.append(ProjectFeature(
@@ -138,9 +147,9 @@ Run like: rm db.sqlite3 && \
         prefix = "LAND_USE"
         lus = []
         for (infix, _ignore) in LandUse.CHOICES:
-            exist = getattr(row, "_".join([prefix, infix, "EXIST"]), 0)
-            prop = getattr(row, "_".join([prefix, infix, "PROP"]), 0)
-            net = getattr(row, "_".join([prefix, infix, "NET"]), 0)
+            exist = self.null_to_default(getattr(row, "_".join([prefix, infix, "EXIST"]), 0), 0)
+            prop = self.null_to_default(getattr(row, "_".join([prefix, infix, "PROP"]), 0), 0)
+            net = self.null_to_default(getattr(row, "_".join([prefix, infix, "NET"]), 0), 0)
             if any([exist, prop, net]):
                 lus.append(LandUse(
                     record=record,
@@ -173,6 +182,7 @@ Run like: rm db.sqlite3 && \
         dwelling_types = []
         project_features = []
         land_uses = []
+        locations = []
         i = -1
         project_description_map = dict()
         print("Creating %d rows" % len(data))
@@ -180,10 +190,13 @@ Run like: rm db.sqlite3 && \
             i += 1
             if i % 1000 == 0:
                 print(i)
+            location,newloc = self.location(row)
+            if newloc:
+                locations.append(location)
             record = Record(
                 id=i,
                 planner=self.planner(row),
-                location=self.location(row),
+                location=location,
                 record_type=self.record_type(row),
                 record_id=row.record_id,
                 # TODO: parent=
@@ -225,15 +238,16 @@ Run like: rm db.sqlite3 && \
                 DwellingType.objects.bulk_create(dwelling_types)
                 ProjectFeature.objects.bulk_create(project_features)
                 LandUse.objects.bulk_create(land_uses)
+                Location.objects.bulk_create(locations)
                 records = []
                 dwelling_types = []
                 project_features = []
                 land_uses = []
+                locations = []
             #early abort for testing purposes
-            #if len(records) > 1000:
-            #    break
+            if len(records) > 1000:
+                break
         
-        #TODO: Fix the bulk create because I don't think it's working right now.
         Record.objects.bulk_create(records)
         rpis = []
         for (rid, pds) in project_description_map.items():
@@ -246,10 +260,12 @@ Run like: rm db.sqlite3 && \
         DwellingType.objects.bulk_create(dwelling_types)
         ProjectFeature.objects.bulk_create(project_features)
         LandUse.objects.bulk_create(land_uses)
+        Location.objects.bulk_create(locations)
         records = []
         dwelling_types = []
         project_features = []
         land_uses = []
+        locations = []
 
         comp_timer.printreport()
 
