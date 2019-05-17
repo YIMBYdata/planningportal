@@ -51,12 +51,21 @@ Run like: rm db.sqlite3 && \
         return d
 
     def record_type(self, row):
-        # TODO: clean the data, as in Tristan's script
-        if row.record_type_category in self.record_types:
+        category = row.record_type_category
+        if category in self.record_types:
             rt = self.record_types[row.record_type_category]
         else:
+            clean_successful = True
+            #check if category is clean
+            if category.lower() == 'other' or len(category) == 3:
+                clean_category = category
+            else:
+                #Note: there's room here for a future bug
+                #if the first instance of a record_type_category has record_type in a nonstandard format
+                #If this happens, the unit tests should catch it.
+                clean_category = row.record_type[-4:-1]
             rt = RecordType(
-                category=row.record_type_category,
+                category=clean_category,
                 name=row.record_type,
                 subtype=row.record_type_subtype,
                 type=row.record_type_type,
@@ -64,7 +73,7 @@ Run like: rm db.sqlite3 && \
                 module=row.module)
             # print("Creating %s" % rt.__dict__)
             rt.save()
-            self.record_types[row.record_type_category] = rt
+            self.record_types[category] = rt
         return rt
 
     def planner(self, row):
@@ -90,7 +99,6 @@ Run like: rm db.sqlite3 && \
         else:
             loc = self._locations[row.the_geom]
         return loc, newloc
-        #TODO: clean up address
 
     def project_descriptions(self, row):
         # The choices on ProjectDescription are the column names in the

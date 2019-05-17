@@ -34,4 +34,12 @@ class DataImportTests(TestCase):
     def test_records_given_location(self):
         '''Record objects are successfully assigned a non-null location'''
         record = Record.objects.get(pk=1)
-        self.assertTrue(record.location)
+        self.assertTrue(record.location,'Records have not been associated with locations')
+        
+    def test_record_type_acronyms(self):
+        '''Record_type successfully cleaned to list 3-letter acronyms'''
+        for record_type in RecordType.objects.iterator():
+            category = record_type.category
+            self.assertTrue((category.lower() == 'other') or 
+                            (len(category) == 3 and category.isupper() and category.isalpha()),
+                           "Record type %s not cleaned" % category)
