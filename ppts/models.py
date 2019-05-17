@@ -137,7 +137,9 @@ class Record(models.Model):
     record_id = models.CharField(
         max_length=100,
         help_text="Planning Department unique identifier for the record")
-
+    
+    #pretty sure this will have to be changed to many-to-many
+    #because a record may have multiple parents or children
     parent = models.OneToOneField(
         "self",
         related_name="child",
@@ -164,7 +166,7 @@ class Record(models.Model):
         null=True)
     related_building_permit = models.CharField(
         max_length=100,
-        help_text="Related Building Permit Number (significance unknown)")
+        help_text="Related Building Permit Number")
     acalink = models.TextField(
         help_text="Link to this record in Accela Citizen Access")
     aalink = models.TextField(
@@ -174,7 +176,7 @@ class Record(models.Model):
 
     project_description = models.ManyToManyField(
         ProjectDescription,
-        help_text="Type of project")
+        help_text="Checkboxes describing type of project")
     mcd_referral = models.CharField(
         max_length=150,
         help_text="Medical Cannabis Dispensary referral",
@@ -186,9 +188,7 @@ class Record(models.Model):
         blank=True,
         null=True)
     # I think some other relations are missing still
-
-    related_building_permit = models.CharField(
-        max_length=100, help_text="Related Building Permit Number")
+    
     bos_1st_read = models.DateField(
         help_text="Full Board Hearing Date, First",
         null=True)

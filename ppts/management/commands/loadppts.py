@@ -32,6 +32,7 @@ Run like: rm db.sqlite3 && \
         parser.add_argument('filename')
 
     def pd_date(self, d):
+        #TODO: replace this when I remove pandas
         if pd.isnull(d) or isinstance(d, str):
             return None
         return d
@@ -72,6 +73,7 @@ Run like: rm db.sqlite3 && \
         return planner
 
     def location(self, row):
+        #TODO: make this into a proper one-to-many relationship, similar to planner
         return Location(
             the_geom=row.the_geom,
             shape_length=row.Shape_Length,
@@ -84,6 +86,7 @@ Run like: rm db.sqlite3 && \
         pds = []
         for (col, _ignore) in ProjectDescription.CHOICES:
             checked = getattr(row, col, False)
+            #TODO: replace this when I remove pandas
             if checked and not pd.isnull(checked):
                 if (isinstance(checked, str) and
                         checked.lower() == "unchecked" and
@@ -120,6 +123,7 @@ Run like: rm db.sqlite3 && \
             exist = getattr(row, "_".join([prefix, infix, "EXIST"]), 0)
             prop = getattr(row, "_".join([prefix, infix, "PROP"]), 0)
             net = getattr(row, "_".join([prefix, infix, "NET"]), 0)
+            # TODO: cleanup related to the empty PROP columns
             if any([exist, prop, net, other_name]):
                 pfs.append(ProjectFeature(
                     record=record,
@@ -147,10 +151,11 @@ Run like: rm db.sqlite3 && \
         return lus
 
     def handle(self, *args, **options):
-        self._project_descriptions = self.make_enum(ProjectDescription)
         comp_timer = Timer()
         # import ipdb
         # ipdb.set_trace()
+        self._project_descriptions = self.make_enum(ProjectDescription)
+        #TODO: remove use of pandas, and read files line by line
         data = pd.read_csv(
             options['filename'],
             parse_dates=[
@@ -224,7 +229,11 @@ Run like: rm db.sqlite3 && \
                 dwelling_types = []
                 project_features = []
                 land_uses = []
-
+            #early abort for testing purposes
+            #if len(records) > 1000:
+            #    break
+        
+        #TODO: Fix the bulk create because I don't think it's working right now.
         Record.objects.bulk_create(records)
         rpis = []
         for (rid, pds) in project_description_map.items():
