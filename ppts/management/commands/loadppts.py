@@ -28,6 +28,7 @@ Run like: rm db.sqlite3 && \
         self._planners = dict()
         self._project_descriptions = dict()
         self._locations = dict()
+        self._location_counter = 0
 
     def add_arguments(self, parser):
         parser.add_argument('filename')
@@ -92,11 +93,13 @@ Run like: rm db.sqlite3 && \
         #TODO: if possible, implement differently so that we're not wasting so much memory on _locations dict
         newloc = row.the_geom not in self._locations
         if newloc:
-            loc = Location(the_geom=row.the_geom,
+            loc = Location(id = self._location_counter,
+                the_geom=row.the_geom,
                 shape_length=row.Shape_Length,
                 shape_area=row.Shape_Area,
                 address=row.address)
             self._locations[row.the_geom] = loc
+            self._location_counter += 1
         else:
             loc = self._locations[row.the_geom]
         return loc, newloc
@@ -194,22 +197,22 @@ Run like: rm db.sqlite3 && \
         dwelling_types = []
         project_features = []
         land_uses = []
-        locations = []
+        locations_unique = []
         i = -1
         project_description_map = dict()
+        locations_list = []
         #sadly there is no way to count the number of rows without reading entire file first.
         #print("Creating %d rows" % len(data))
         for chunk in data_reader:
             print(i+1)
+            j = -1
             for row in chunk.itertuples():
                 i += 1
-                loc,newloc = self.location(row)
-                if newloc:
-                    locations.append(loc)
+                j += 1
                 record = Record(
                     id=i,
                     planner=self.planner(row),
-                    location=loc,
+                    #location=loc,
                     record_type=self.record_type(row),
                     record_id=row.record_id,
                     # TODO: parent=
@@ -233,13 +236,21 @@ Run like: rm db.sqlite3 && \
                     mcd_referral=row.MCD_REFERRAL,
                     environmental_review=row.ENVIRONMENTAL_REVIEW_TYPE,
                 )
+                
+                loc,newloc = self.location(row)
+                if newloc:
+                    locations_unique.append(loc)
+                locations_list.append(loc.id)
+                
                 project_description_map[i] = self.project_descriptions(row)
                 records.append(record)
                 dwelling_types.extend(self.dwelling_type(row, record))
                 project_features.extend(self.project_feature(row, record))
                 land_uses.extend(self.land_use(row, record))
                 if len(records) > 10000:
-                    Location.objects.bulk_create(locations)
+                    Location.objects.bulk_create(locations_unique)
+                    for rid, lid in enumerate(locations_list):
+                        records[rid].location_id = lid
                     Record.objects.bulk_create(records)
                     rpis = []
                     for (rid, pds) in project_description_map.items():
@@ -256,13 +267,15 @@ Run like: rm db.sqlite3 && \
                     dwelling_types = []
                     project_features = []
                     land_uses = []
-                    locations = []
+                    locations_unique = []
+                    locations_list = []
             #early abort for testing purposes
             if options['quicktest']:
                 break
         
-        #TODO: figure out why records is failing to create a foreign key for locations
-        Location.objects.bulk_create(locations)
+        Location.objects.bulk_create(locations_unique)
+        for rid, lid in enumerate(locations_list):
+            records[rid].location_id = lid
         Record.objects.bulk_create(records)
         rpis = []
         for (rid, pds) in project_description_map.items():
@@ -279,7 +292,8 @@ Run like: rm db.sqlite3 && \
         dwelling_types = []
         project_features = []
         land_uses = []
-        locations = []
+        locations_unique = []
+        locations_list = []
 
         comp_timer.printreport()
 

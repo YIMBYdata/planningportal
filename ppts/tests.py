@@ -30,6 +30,7 @@ class DataImportTests(TestCase):
         self.assertTrue(ProjectDescription.objects.count() > 0)
         self.assertTrue(Record.objects.count() > 0)
         self.assertTrue(RecordType.objects.count() > 0)
+        #self.assertTrue(Record.parent.through.count() > 0)
         
     def test_records_given_location(self):
         '''Record objects are successfully assigned a non-null location'''

@@ -2,6 +2,7 @@ from django.db import models
 
 
 class Location(models.Model):
+    id = models.IntegerField(help_text="Primary Key", primary_key=True)
     the_geom = models.TextField(
         help_text="Polygon defining the parcel.")  # TODO: GIS support
     shape_length = models.DecimalField(
