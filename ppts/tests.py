@@ -43,3 +43,9 @@ class DataImportTests(TestCase):
             self.assertTrue((category.lower() == 'other') or 
                             (len(category) == 3 and category.isupper() and category.isalpha()),
                            "Record type %s not cleaned" % category)
+            
+    def test_project_feature_addition(self):
+        '''Net change in units of project features equals proposed units minus existing units'''
+        for feature in ProjectFeature.objects.iterator():
+            self.assertTrue(feature.net == feature.proposed - feature.exist,"Units don't add up for %s" % feature.type)
+    

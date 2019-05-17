@@ -89,6 +89,7 @@ Run like: rm db.sqlite3 && \
         return planner
 
     def location(self, row):
+        #TODO: if possible, implement differently so that we're not wasting so much memory on _locations dict
         newloc = row.the_geom not in self._locations
         if newloc:
             loc = Location(the_geom=row.the_geom,
@@ -140,16 +141,17 @@ Run like: rm db.sqlite3 && \
             if infix == ProjectFeature.OTHER:
                 other_name = self.null_to_default(getattr(row, "_".join([prefix, infix]), ""), "")
             exist = self.null_to_default(getattr(row, "_".join([prefix, infix, "EXIST"]), 0), 0)
-            prop = self.null_to_default(getattr(row, "_".join([prefix, infix, "PROP"]), 0), 0)
+            #prop = self.null_to_default(getattr(row, "_".join([prefix, infix, "PROP"]), 0), 0)
             net = self.null_to_default(getattr(row, "_".join([prefix, infix, "NET"]), 0), 0)
-            # TODO: cleanup related to the empty PROP columns
-            if any([exist, prop, net, other_name]):
+            #if any([exist, prop, net, other_name]):
+            if any([exist, net, other_name]):
                 pfs.append(ProjectFeature(
                     record=record,
                     type=infix,
                     other_name=other_name,
                     exist=exist,
-                    proposed=prop,
+                    #proposed=prop,
+                    proposed = exist+net,
                     net=net))
         return pfs
 
