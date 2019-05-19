@@ -38,6 +38,7 @@ class Common(Configuration):
         'debug_toolbar',
 
         'planningportal.users',
+        'ppts.apps.PptsConfig',
     ]
 
     MIDDLEWARE = [
