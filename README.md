@@ -2,7 +2,7 @@
 
 ## development
 
-### Set up your local dev environment:
+### Prerequisites
 
 1. Install python3
 1. Install pip3 (on linux)
@@ -22,20 +22,24 @@ brew install python3
 brew install pipenv
 ```
 
-### Install depdendencies
+### Set up your local dev environment:
 
 ```sh
-Make setup
-```
-
-Open `.env` and edit as necessary.
-
-### Set up your database
-
-```sh
+# Activate the virtual environment
+pipenv shell
+# Install depdendencies
+make setup
+# Open `.env` and edit as necessary.
+# ...
+# Set up your database
 python manage.py migrate
 python manage.py createsuperuser
+# Get the planning data
+make fetchdata
+# Load your database
+python manage.py loadppts data/<the ppts file>
 ```
+
 
 # Repo structure
 
