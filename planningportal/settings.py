@@ -13,6 +13,8 @@ from configurations import Configuration, values
 
 
 class Common(Configuration):
+    STATIC_URL = '/static/'
+    
     # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
     BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
