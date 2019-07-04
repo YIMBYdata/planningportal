@@ -9,7 +9,7 @@ def index(request):
     context = {}
     return render(request, 'ppts/index.html', context)
 
-def getimage(request):
+def samplegraph(request):
     # Construct the graph
     x = range(0, 20, 1)
     s = range(0,40,2)
@@ -17,16 +17,19 @@ def getimage(request):
 
     plt.xlabel('xlabel(X)')
     plt.ylabel('ylabel(Y)')
-    plt.title('Simple Graph!')
-    #plt.grid(True)
+    plt.title('Sample Graph')
     
+    fig = plt.gcf()
+    return figureToHttp(fig)
+    
+
+def figureToHttp(figure):
+    '''Stores a figure as byes, and then returns an HttpResponse.'''
     buffer = io.BytesIO()
-    canvas = plt.gca().figure.canvas
-    #canvas = pylab.get_current_fig_manager().canvas
+    canvas = figure.canvas
     canvas.draw()
     
     pilImage = PIL.Image.frombytes("RGB", canvas.get_width_height(), canvas.tostring_rgb())
     pilImage.save(buffer, "PNG")
-    #pylab.close()
     
     return HttpResponse(buffer.getvalue(), content_type="image/png")
