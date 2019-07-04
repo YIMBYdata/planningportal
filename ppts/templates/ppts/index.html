@@ -1,2 +1,3 @@
-
-<img src="{% url 'sample graph' %}" alt="sample graph">
+{% for graph in graph_list %}
+    <img src="{% url 'graph' graph %}" alt="{{graph}}">
+{% endfor %}
