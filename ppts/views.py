@@ -1,11 +1,13 @@
+import io
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+import PIL
+import PIL.Image
+
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.http import Http404
-
-import matplotlib.pyplot as plt
-import PIL, PIL.Image
-import io
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from django.db.models import Count
 
 from ppts.models import DwellingType
 from ppts.models import LandUse
@@ -15,31 +17,30 @@ from ppts.models import ProjectFeature
 from ppts.models import ProjectDescription
 from ppts.models import Record
 from ppts.models import RecordType
-from django.db.models import Count
 
 def index(request):
+    """Returns the ppts index page."""
     graph_list = []
     
     #append names of graphs
-    graph_list.append('samplegraph')
-    graph_list.append('samplegraph2')
-    graph_list.append('samplegraph')
+    graph_list.append('sample_1')
+    graph_list.append('sample_2')
     
     #use list of graphs as context and render page
     context = {'graph_list': graph_list}
     return render(request, 'ppts/index.html', context)
 
-def graphmanager(request, graphname):
-    '''given the name of the graph, sends request to appropriate function'''
+def graphs_manager(request, graphname):
+    """Generates the graph with the given name and returns an http response."""
     graph_func = globals()['graph_' + graphname]
-    return figureToHttp(graph_func())
+    return figure_to_http(graph_func())
     #to be added: 404 error when there's no graph
 
-def graph_samplegraph():
-    # Construct the graph
-    fig,ax = plt.subplots()
+def graph_sample_1():
+    """A sample graph with a straight line."""
+    fig, ax = plt.subplots()
     x = range(0, 20, 1)
-    s = range(0,40,2)
+    s = range(0, 40, 2)
     ax.plot(x, s)
 
     ax.set_xlabel('xlabel(X)')
@@ -48,11 +49,12 @@ def graph_samplegraph():
     
     return fig
 
-def graph_samplegraph2():
-    #a basic graph that uses ppts data
-    fig,ax = plt.subplots()
+def graph_sample_2():
+    """A sample graph with a pie chart of PRJ statuses"""
+    fig, ax = plt.subplots()
     
-    projects = Record.objects.filter(record_type__pk = 'PRJ').values('status').annotate(status_counts = Count('pk'))
+    projects = Record.objects.filter(record_type__pk='PRJ').values('status').annotate(
+        status_counts=Count('pk'))
     status_counts = []
     status = []
     for item in projects:
@@ -63,15 +65,14 @@ def graph_samplegraph2():
     
     return fig
     
-def figureToHttp(figure):
-    '''Stores a figure as bytes, and then returns an HttpResponse.'''
+def figure_to_http(figure):
+    """Stores a figure as bytes, and then returns an HttpResponse."""
     buffer = io.BytesIO()
     
-    canvas=FigureCanvas(figure)
-    #canvas = figure.canvas
+    canvas = FigureCanvas(figure)
     canvas.draw()
     
-    pilImage = PIL.Image.frombytes("RGB", canvas.get_width_height(), canvas.tostring_rgb())
-    pilImage.save(buffer, "PNG")
+    pil_image = PIL.Image.frombytes("RGB", canvas.get_width_height(), canvas.tostring_rgb())
+    pil_image.save(buffer, "PNG")
     
     return HttpResponse(buffer.getvalue(), content_type="image/png")
