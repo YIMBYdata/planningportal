@@ -142,6 +142,7 @@ class Record(models.Model):
     parent = models.ManyToManyField(
         "self",
         related_name="child",
+        symmetrical=False,
         help_text="The parent/child relationship for related records.")
 
     object_id = models.IntegerField(
